@@ -1,0 +1,472 @@
+// internal/domain/models/event.go
+package models
+
+import (
+	"time"
+)
+
+// AnalyticsEvent представляет собой событие аналитики
+type AnalyticsEvent struct {
+	ID         string            `json:"id,omitempty"`
+	Timestamp  time.Time         `json:"timestamp"`
+	EventType  string            `json:"eventType"`
+	UserID     string            `json:"userId"`
+	Properties map[string]string `json:"properties,omitempty"`
+}
+
+// internal/domain/services/analytics.go
+package services
+
+import (
+	"context"
+	"time"
+
+	"analytics-service/internal/domain/models"
+)
+
+// EventRepository интерфейс для работы с хранилищем событий
+type EventRepository interface {
+	StoreEvent(ctx context.Context, event models.AnalyticsEvent) error
+	GetEventsByType(ctx context.Context, eventType string, from, to time.Time) ([]models.AnalyticsEvent, error)
+	GetEventCounts(ctx context.Context, from, to time.Time) (map[string]int, error)
+	GetUniqueUsers(ctx context.Context, from, to time.Time) (int, error)
+}
+
+// MetricsProvider интерфейс для работы с метриками
+type MetricsProvider interface {
+	RecordEvent(eventType string)
+	RecordProcessingTime(duration time.Duration)
+}
+
+// AnalyticsService сервис для работы с аналитикой
+type AnalyticsService struct {
+	repo    EventRepository
+	metrics MetricsProvider
+}
+
+// NewAnalyticsService создает новый экземпляр сервиса аналитики
+func NewAnalyticsService(repo EventRepository, metrics MetricsProvider) *AnalyticsService {
+	return &AnalyticsService{
+		repo:    repo,
+		metrics: metrics,
+	}
+}
+
+// ProcessEvent обрабатывает событие аналитики
+func (s *AnalyticsService) ProcessEvent(ctx context.Context, event models.AnalyticsEvent) error {
+	start := time.Now()
+	
+	// Если timestamp не установлен, используем текущее время
+	if event.Timestamp.IsZero() {
+		event.Timestamp = time.Now()
+	}
+	
+	// Сохраняем событие в хранилище
+	if err := s.repo.StoreEvent(ctx, event); err != nil {
+		return err
+	}
+	
+	// Обновляем метрики
+	s.metrics.RecordEvent(event.EventType)
+	s.metrics.RecordProcessingTime(time.Since(start))
+	
+	return nil
+}
+
+// GetMetrics получает агрегированные метрики за период
+func (s *AnalyticsService) GetMetrics(ctx context.Context, from, to time.Time, eventType string) (map[string]interface{}, error) {
+	var counts map[string]int
+	var err error
+	
+	// Если указан конкретный тип события, получаем счетчики только для него
+	if eventType != "" {
+		events, err := s.repo.GetEventsByType(ctx, eventType, from, to)
+		if err != nil {
+			return nil, err
+		}
+		counts = map[string]int{eventType: len(events)}
+	} else {
+		// Иначе получаем счетчики для всех типов событий
+		counts, err = s.repo.GetEventCounts(ctx, from, to)
+		if err != nil {
+			return nil, err
+		}
+	}
+	
+	// Получаем количество уникальных пользователей
+	users, err := s.repo.GetUniqueUsers(ctx, from, to)
+	if err != nil {
+		return nil, err
+	}
+	
+	// Формируем результат
+	result := map[string]interface{}{
+		"counts": counts,
+		"users":  users,
+		"period": map[string]time.Time{
+			"from": from,
+			"to":   to,
+		},
+	}
+	
+	return result, nil
+}
+
+// internal/infrastructure/storage/clickhouse/repository.go
+package clickhouse
+
+import (
+	"context"
+	"fmt"
+	"time"
+
+	"analytics-service/internal/domain/models"
+)
+
+// ClickHouseRepository реализация репозитория для ClickHouse
+type ClickHouseRepository struct {
+	client *Client
+}
+
+// NewClickHouseRepository создает новый репозиторий для ClickHouse
+func NewClickHouseRepository(client *Client) *ClickHouseRepository {
+	return &ClickHouseRepository{
+		client: client,
+	}
+}
+
+// StoreEvent сохраняет событие в ClickHouse
+func (r *ClickHouseRepository) StoreEvent(ctx context.Context, event models.AnalyticsEvent) error {
+	query := `
+	INSERT INTO analytics_events (
+		timestamp, event_type, user_id, properties
+	) VALUES (?, ?, ?, ?)
+	`
+
+	if err := r.client.conn.Exec(ctx, query,
+		event.Timestamp,
+		event.EventType,
+		event.UserID,
+		event.Properties,
+	); err != nil {
+		return fmt.Errorf("failed to insert event: %w", err)
+	}
+
+	return nil
+}
+
+// GetEventsByType получает события по типу за период
+func (r *ClickHouseRepository) GetEventsByType(ctx context.Context, eventType string, from, to time.Time) ([]models.AnalyticsEvent, error) {
+	query := `
+	SELECT timestamp, event_type, user_id, properties
+	FROM analytics_events
+	WHERE event_type = ? AND timestamp BETWEEN ? AND ?
+	ORDER BY timestamp DESC
+	`
+
+	rows, err := r.client.conn.Query(ctx, query, eventType, from, to)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query events: %w", err)
+	}
+	defer rows.Close()
+
+	var events []models.AnalyticsEvent
+	for rows.Next() {
+		var event models.AnalyticsEvent
+		if err := rows.Scan(&event.Timestamp, &event.EventType, &event.UserID, &event.Properties); err != nil {
+			return nil, fmt.Errorf("failed to scan event: %w", err)
+		}
+		events = append(events, event)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("rows error: %w", err)
+	}
+
+	return events, nil
+}
+
+// GetEventCounts получает количество событий по типам за период
+func (r *ClickHouseRepository) GetEventCounts(ctx context.Context, from, to time.Time) (map[string]int, error) {
+	query := `
+	SELECT event_type, COUNT(*) as count
+	FROM analytics_events
+	WHERE timestamp BETWEEN ? AND ?
+	GROUP BY event_type
+	`
+
+	rows, err := r.client.conn.Query(ctx, query, from, to)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query event counts: %w", err)
+	}
+	defer rows.Close()
+
+	counts := make(map[string]int)
+	for rows.Next() {
+		var eventType string
+		var count int
+		if err := rows.Scan(&eventType, &count); err != nil {
+			return nil, fmt.Errorf("failed to scan count: %w", err)
+		}
+		counts[eventType] = count
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("rows error: %w", err)
+	}
+
+	return counts, nil
+}
+
+// GetUniqueUsers получает количество уникальных пользователей за период
+func (r *ClickHouseRepository) GetUniqueUsers(ctx context.Context, from, to time.Time) (int, error) {
+	query := `
+	SELECT COUNT(DISTINCT user_id) as unique_users
+	FROM analytics_events
+	WHERE timestamp BETWEEN ? AND ?
+	`
+
+	var count int
+	if err := r.client.conn.QueryRow(ctx, query, from, to).Scan(&count); err != nil {
+		return 0, fmt.Errorf("failed to get unique users: %w", err)
+	}
+
+	return count, nil
+}
+
+// internal/infrastructure/kafka/consumer.go
+package kafka
+
+import (
+	"context"
+	"encoding/json"
+	"log"
+	"time"
+
+	"github.com/segmentio/kafka-go"
+	
+	"analytics-service/internal/domain/models"
+	"analytics-service/internal/domain/services"
+)
+
+// Consumer представляет собой потребителя сообщений из Kafka
+type Consumer struct {
+	reader  *kafka.Reader
+	service *services.AnalyticsService
+}
+
+// NewConsumer создает нового потребителя Kafka
+func NewConsumer(brokers []string, topic, groupID string, service *services.AnalyticsService) *Consumer {
+	reader := kafka.NewReader(kafka.ReaderConfig{
+		Brokers:   brokers,
+		Topic:     topic,
+		GroupID:   groupID,
+		MinBytes:  10e3, // 10KB
+		MaxBytes:  10e6, // 10MB
+		MaxWait:   time.Second,
+	})
+
+	return &Consumer{
+		reader:  reader,
+		service: service,
+	}
+}
+
+// Start запускает обработку сообщений
+func (c *Consumer) Start(ctx context.Context) {
+	go func() {
+		for {
+			select {
+			case <-ctx.Done():
+				log.Println("Stopping Kafka consumer...")
+				if err := c.reader.Close(); err != nil {
+					log.Printf("Error closing Kafka reader: %v", err)
+				}
+				return
+			default:
+				c.processMessages(ctx)
+			}
+		}
+	}()
+}
+
+// processMessages обрабатывает сообщения из Kafka
+func (c *Consumer) processMessages(ctx context.Context) {
+	// Установим таймаут для чтения сообщений
+	readCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	defer cancel()
+
+	msg, err := c.reader.ReadMessage(readCtx)
+	if err != nil {
+		// Проверим, не вызвана ли ошибка контекстом
+		if err == context.DeadlineExceeded || err == context.Canceled {
+			return
+		}
+		log.Printf("Error reading message: %v", err)
+		return
+	}
+
+	// Десериализуем сообщение в событие аналитики
+	var event models.AnalyticsEvent
+	if err := json.Unmarshal(msg.Value, &event); err != nil {
+		log.Printf("Error unmarshaling message: %v", err)
+		return
+	}
+
+	// Обработаем событие
+	if err := c.service.ProcessEvent(ctx, event); err != nil {
+		log.Printf("Error processing event: %v", err)
+		return
+	}
+
+	log.Printf("Processed message: topic=%s, partition=%d, offset=%d", msg.Topic, msg.Partition, msg.Offset)
+}
+
+// internal/infrastructure/metrics/prometheus.go
+package metrics
+
+import (
+	"time"
+
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
+)
+
+// PrometheusClient реализация провайдера метрик на основе Prometheus
+type PrometheusClient struct {
+	eventCounter      *prometheus.CounterVec
+	processingTimeHist *prometheus.HistogramVec
+}
+
+// NewPrometheusClient создает нового клиента Prometheus
+func NewPrometheusClient() *PrometheusClient {
+	eventCounter := promauto.NewCounterVec(
+		prometheus.CounterOpts{
+			Name: "analytics_events_total",
+			Help: "The total number of processed analytics events",
+		},
+		[]string{"event_type"},
+	)
+
+	processingTimeHist := promauto.NewHistogramVec(
+		prometheus.HistogramOpts{
+			Name:    "analytics_processing_duration_seconds",
+			Help:    "Histogram of analytics event processing time in seconds",
+			Buckets: prometheus.DefBuckets,
+		},
+		[]string{"event_type"},
+	)
+
+	return &PrometheusClient{
+		eventCounter:      eventCounter,
+		processingTimeHist: processingTimeHist,
+	}
+}
+
+// RecordEvent записывает событие в метрики
+func (p *PrometheusClient) RecordEvent(eventType string) {
+	p.eventCounter.WithLabelValues(eventType).Inc()
+}
+
+// RecordProcessingTime записывает время обработки события
+func (p *PrometheusClient) RecordProcessingTime(duration time.Duration) {
+	p.processingTimeHist.WithLabelValues("all").Observe(duration.Seconds())
+}
+
+// cmd/server/main.go
+package main
+
+import (
+	"context"
+	"log"
+	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
+
+	"github.com/prometheus/client_golang/prometheus/promhttp"
+	
+	"analytics-service/internal/api"
+	"analytics-service/internal/config"
+	"analytics-service/internal/domain/services"
+	"analytics-service/internal/infrastructure/kafka"
+	"analytics-service/internal/infrastructure/metrics"
+	"analytics-service/internal/infrastructure/storage/clickhouse"
+)
+
+func main() {
+	// Загрузка конфигурации
+	cfg, err := config.Load()
+	if err != nil {
+		log.Fatalf("Failed to load config: %v", err)
+	}
+
+	// Инициализация метрик
+	metricsClient := metrics.NewPrometheusClient()
+
+	// Инициализация хранилища
+	chClient, err := clickhouse.NewClient(
+		cfg.ClickHouse.Host,
+		cfg.ClickHouse.Port,
+		cfg.ClickHouse.Database,
+		cfg.ClickHouse.Username,
+		cfg.ClickHouse.Password,
+	)
+	if err != nil {
+		log.Fatalf("Failed to connect to ClickHouse: %v", err)
+	}
+	defer chClient.Close()
+
+	// Создание репозитория
+	repository := clickhouse.NewClickHouseRepository(chClient)
+
+	// Создание сервиса аналитики
+	analyticsService := services.NewAnalyticsService(repository, metricsClient)
+
+	// Инициализация потребителя Kafka
+	consumer := kafka.NewConsumer(
+		cfg.Kafka.Brokers,
+		cfg.Kafka.Topic,
+		cfg.Kafka.GroupID,
+		analyticsService,
+	)
+
+	// Контекст для graceful shutdown
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	// Запуск потребителя Kafka
+	consumer.Start(ctx)
+
+	// Инициализация HTTP сервера для API и метрик
+	httpServer := api.NewServer(cfg.Server.Port, analyticsService)
+
+	// Добавление обработчика для метрик Prometheus
+	http.Handle("/metrics", promhttp.Handler())
+
+	// Запуск HTTP сервера в отдельной горутине
+	go func() {
+		log.Printf("Starting HTTP server on port %d", cfg.Server.Port)
+		if err := httpServer.Start(); err != nil && err != http.ErrServerClosed {
+			log.Fatalf("HTTP server error: %v", err)
+		}
+	}()
+
+	// Обработка сигналов для graceful shutdown
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	<-quit
+
+	log.Println("Shutting down service...")
+	cancel()
+
+	// Graceful shutdown HTTP сервера
+	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer shutdownCancel()
+	if err := httpServer.Stop(shutdownCtx); err != nil {
+		log.Fatalf("HTTP server shutdown error: %v", err)
+	}
+
+	log.Println("Service stopped")
+}

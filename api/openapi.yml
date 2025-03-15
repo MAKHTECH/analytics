@@ -1,0 +1,125 @@
+openapi: 3.0.3
+info:
+  title: Analytics Service API
+  version: 1.0.0
+  description: API для сервиса аналитики
+paths:
+  /events:
+    post:
+      summary: Отправить событие аналитики
+      operationId: createEvent
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EventRequest'
+      responses:
+        '200':
+          description: Событие успешно обработано
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventResponse'
+        '400':
+          description: Некорректный запрос
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /metrics:
+    get:
+      summary: Получить метрики аналитики
+      operationId: getMetrics
+      parameters:
+        - name: from
+          in: query
+          schema:
+            type: string
+            format: date-time
+          description: Начальная дата для выборки
+        - name: to
+          in: query
+          schema:
+            type: string
+            format: date-time
+          description: Конечная дата для выборки
+        - name: eventType
+          in: query
+          schema:
+            type: string
+          description: Тип события для фильтрации
+      responses:
+        '200':
+          description: Метрики успешно получены
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MetricsResponse'
+        '400':
+          description: Некорректный запрос
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+components:
+  schemas:
+    EventRequest:
+      type: object
+      required:
+        - eventType
+        - userId
+      properties:
+        eventType:
+          type: string
+          description: Тип события
+        userId:
+          type: string
+          description: ID пользователя
+        timestamp:
+          type: string
+          format: date-time
+          description: Время события (по умолчанию - текущее время)
+        properties:
+          type: object
+          additionalProperties:
+            type: string
+          description: Дополнительные свойства события
+    EventResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          description: ID обработанного события
+        status:
+          type: string
+          description: Статус обработки
+    MetricsResponse:
+      type: object
+      properties:
+        counts:
+          type: object
+          additionalProperties:
+            type: integer
+          description: Количество событий по типам
+        users:
+          type: integer
+          description: Количество уникальных пользователей
+        period:
+          type: object
+          properties:
+            from:
+              type: string
+              format: date-time
+            to:
+              type: string
+              format: date-time
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Сообщение об ошибке
+        code:
+          type: integer
+          description: Код ошибки

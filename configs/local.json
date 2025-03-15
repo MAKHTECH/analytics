@@ -1,0 +1,16 @@
+{
+  "app": {
+    "env": "local",
+    "app_id": "2",
+    "secret": "X7K9p2mJ8zxcL4tQ5Y6uB0xA1cF2dH9gE=",
+    "address": "localhost",
+    "port": "8080"
+  },
+  "clickhouse": {
+    "host": "clickhouse",
+    "port": 9000,
+    "username": "makhkets",
+    "password": "1324",
+    "database": "analytics"
+  }
+}

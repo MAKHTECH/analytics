@@ -1,0 +1,13 @@
+{"timestamp":"20:36:36.826","level":"INFO","message":"Hello \n","data":{}}
+{"timestamp":"20:46:46.967","level":"DEBUG","message":"test \n","data":{}}
+{"timestamp":"20:46:46.967","level":"INFO","message":"Hello \n","data":{}}
+{"timestamp":"20:59:59.638","level":"DEBUG","message":"test \n","data":{}}
+{"timestamp":"20:59:59.638","level":"INFO","message":"Hello \n","data":{}}
+{"timestamp":"20:11:11.314","level":"DEBUG","message":"test \n","data":{}}
+{"timestamp":"20:11:11.314","level":"INFO","message":"starting application ","data":{"config":{"app":{"env":"local","secret":"X7K9p2mJ8zxcL4tQ5Y6uB0xA1cF2dH9gE="},"database":{"database":"","host":"","password":"","port":0,"username":""}}}}
+{"timestamp":"20:39:39.355","level":"DEBUG","message":"test \n","data":{}}
+{"timestamp":"20:39:39.356","level":"INFO","message":"starting application ","data":{"config":{"app":{"env":"local","secret":"X7K9p2mJ8zxcL4tQ5Y6uB0xA1cF2dH9gE="},"clickhouse":{"database":"analytics","host":"clickhouse","password":"1324","port":9000,"username":"makhkets"}}}}
+{"timestamp":"20:04:04.508","level":"INFO","message":"starting application ","data":{"config":{"app":{"env":"local","secret":"X7K9p2mJ8zxcL4tQ5Y6uB0xA1cF2dH9gE="},"clickhouse":{"database":"analytics","host":"clickhouse","password":"1324","port":9000,"username":"makhkets"}}}}
+{"timestamp":"20:38:38.270","level":"INFO","message":"hello world \n","data":{}}
+{"timestamp":"20:10:10.447","level":"INFO","message":"starting application ","data":{"config":{"app":{"env":"local","secret":"X7K9p2mJ8zxcL4tQ5Y6uB0xA1cF2dH9gE="},"clickhouse":{"database":"analytics","host":"clickhouse","password":"1324","port":9000,"username":"makhkets"}}}}
+{"timestamp":"21:05:05.047","level":"INFO","message":"starting application ","data":{"config":{"app":{"env":"local","secret":"X7K9p2mJ8zxcL4tQ5Y6uB0xA1cF2dH9gE="},"clickhouse":{"database":"analytics","host":"clickhouse","password":"1324","port":9000,"username":"makhkets"}}}}
