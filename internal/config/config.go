@@ -3,6 +3,7 @@ package config
 import (
 	"analytics/pkg/utils"
 	"github.com/ilyakaznacheev/cleanenv"
+	"path"
 )
 
 type Config struct {
@@ -29,7 +30,7 @@ type ClickHouse struct {
 var config Config
 
 func MustLoad(filename string) *Config {
-	configFile := utils.FindDirectoryName("configs") + "\\" + filename
+	configFile := path.Join(utils.FindDirectoryName("configs"), filename)
 
 	if err := cleanenv.ReadConfig(configFile, &config); err != nil {
 		panic(err)

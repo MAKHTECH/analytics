@@ -11,3 +11,5 @@
 {"timestamp":"20:38:38.270","level":"INFO","message":"hello world \n","data":{}}
 {"timestamp":"20:10:10.447","level":"INFO","message":"starting application ","data":{"config":{"app":{"env":"local","secret":"X7K9p2mJ8zxcL4tQ5Y6uB0xA1cF2dH9gE="},"clickhouse":{"database":"analytics","host":"clickhouse","password":"1324","port":9000,"username":"makhkets"}}}}
 {"timestamp":"21:05:05.047","level":"INFO","message":"starting application ","data":{"config":{"app":{"env":"local","secret":"X7K9p2mJ8zxcL4tQ5Y6uB0xA1cF2dH9gE="},"clickhouse":{"database":"analytics","host":"clickhouse","password":"1324","port":9000,"username":"makhkets"}}}}
+{"timestamp":"21:07:07.224","level":"INFO","message":"starting application ","data":{"config":{"app":{"address":"localhost","app_id":2,"env":"local","port":8080,"secret":"X7K9p2mJ8zxcL4tQ5Y6uB0xA1cF2dH9gE="},"clickhouse":{"database":"analytics","host":"clickhouse","password":"1324","port":9000,"username":"makhkets"}}}}
+{"timestamp":"21:09:09.517","level":"INFO","message":"Failed to connect to ClickHouse: не удалось выполнить ping ClickHouse: dial tcp: lookup clickhouse: no such host \n","data":{}}

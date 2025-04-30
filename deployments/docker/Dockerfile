@@ -1,19 +1,12 @@
-# Build stage (ELEGANT)
-FROM golang:1.24.0-alpine AS builder
+FROM golang:1.24.0-alpine
 
-WORKDIR /build
+WORKDIR /app
 
 COPY go.mod go.sum ./
 RUN go mod download
 
+RUN go install github.com/air-verse/air@latest
+
 COPY . .
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o analytics cmd/server/main.go
 
-# Final stage (ELEGANT)
-FROM alpine:latest
-
-WORKDIR /go/src/app
-
-COPY --from=builder /build/ .
-
-CMD ["./analytics"]
+CMD ["air", "-c", "cmd/server/.air.toml"]

@@ -1,6 +1,6 @@
 services:
   clickhouse:
-    image: clickhouse/clickhouse-server:latest
+    image: clickhouse/clickhouse-server:22.2.3
     ports:
       - "8123:8123"
       - "9000:9000"
@@ -23,20 +23,25 @@ services:
       dockerfile: ./deployments/docker/Dockerfile
     ports:
       - "8000:8000"
-    depends_on:
-      clickhouse:
-        condition: service_healthy
     environment:
       - CLICKHOUSE_HOST=clickhouse
       - CLICKHOUSE_DB=analytics
       - CLICKHOUSE_USER=makhkets
       - CLICKHOUSE_PASSWORD=1324
+    depends_on:
+      clickhouse:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 10s
       timeout: 5s
       retries: 5
       start_period: 30s
+    develop:
+      watch:
+        - action: sync
+          path: ../../
+          target: /app
 
 volumes:
   clickhouse-data:
