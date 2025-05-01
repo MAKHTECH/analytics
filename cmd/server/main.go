@@ -10,7 +10,7 @@ import (
 	"analytics/internal/services"
 	"analytics/pkg/logging"
 	"context"
-	"errors"
+	"fmt"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"log"
 	"log/slog"
@@ -44,7 +44,7 @@ func main() {
 
 	// Инициализация потребителя Kafka
 	consumer := kafka.NewConsumer(
-		[]string{"brokers"},
+		[]string{"kafka:9092"},
 		"topic",
 		analyticsService,
 	)
@@ -57,24 +57,32 @@ func main() {
 	consumer.Start(ctx)
 
 	// Инициализация HTTP сервера для API и метрик
-	handlers := handlers.NewServerAPI(analyticsService)
-	httpServer, err := api.NewServer(handlers)
+	serverApi := handlers.NewServerAPI(analyticsService)
+	httpServer, err := api.NewServer(serverApi)
+	if err != nil {
+		log.Fatalf("cannot create server: %v", err)
+	}
+
+	mux := http.NewServeMux()
+	mux.Handle("/", httpServer)
+	mux.Handle("/metrics", promhttp.Handler())
+
 	server := &http.Server{
 		Addr:         cfg.App.Address + ":" + strconv.Itoa(cfg.App.Port),
-		Handler:      httpServer,
+		Handler:      mux,
 		ReadTimeout:  5 * time.Second,
 		WriteTimeout: 10 * time.Second,
 		IdleTimeout:  15 * time.Second,
 	}
 
-	// Добавление обработчика для метрик Prometheus
-	http.Handle("/metrics", promhttp.Handler())
-
 	// Запуск HTTP сервера в отдельной горутине
 	go func() {
 		log.Printf("Starting HTTP server on port %d", cfg.App.Port)
-		if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+		slog.Info("started", slog.String("address", cfg.App.Address), slog.Int("port", cfg.App.Port))
+		if err = server.ListenAndServe(); err != nil {
 			log.Fatalf("HTTP server error: %v", err)
+		} else {
+			fmt.Println("все успешно")
 		}
 	}()
 

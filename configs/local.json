@@ -3,8 +3,8 @@
     "env": "local",
     "app_id": 2,
     "secret": "X7K9p2mJ8zxcL4tQ5Y6uB0xA1cF2dH9gE=",
-    "address": "localhost",
-    "port": 8080
+    "address": "0.0.0.0",
+    "port": 8000
   },
   "clickhouse": {
     "host": "clickhouse",

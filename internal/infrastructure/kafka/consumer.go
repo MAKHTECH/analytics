@@ -5,6 +5,7 @@ import (
 	"analytics/internal/services"
 	"context"
 	"encoding/json"
+	"errors"
 	"log"
 	"time"
 
@@ -60,7 +61,7 @@ func (c *Consumer) processMessages(ctx context.Context) {
 	msg, err := c.reader.ReadMessage(readCtx)
 	if err != nil {
 		// Проверим, не вызвана ли ошибка контекстом
-		if err == context.DeadlineExceeded || err == context.Canceled {
+		if errors.Is(err, context.DeadlineExceeded) || errors.Is(err, context.Canceled) {
 			return
 		}
 		log.Printf("Error reading message: %v", err)
