@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"log"
+	"log/slog"
 	"time"
 
 	"github.com/segmentio/kafka-go"
@@ -23,6 +24,7 @@ func NewConsumer(brokers []string, topic string, service *services.AnalyticsServ
 	reader := kafka.NewReader(kafka.ReaderConfig{
 		Brokers:  brokers,
 		Topic:    topic,
+		GroupID:  "analytics-mkh",
 		MinBytes: 10e3, // 10KB
 		MaxBytes: 10e6, // 10MB
 		MaxWait:  time.Second,
@@ -40,7 +42,7 @@ func (c *Consumer) Start(ctx context.Context) {
 		for {
 			select {
 			case <-ctx.Done():
-				log.Println("Stopping Kafka consumer...")
+				slog.Debug("Stopping Kafka consumer...")
 				if err := c.reader.Close(); err != nil {
 					log.Printf("Error closing Kafka reader: %v", err)
 				}

@@ -1,4 +1,3 @@
-// client.go
 package clickhouse
 
 import (
@@ -25,15 +24,15 @@ type Config struct {
 }
 
 // NewClient создает новый клиент ClickHouse
-func NewClient() (*Client, error) {
-	address := fmt.Sprintf("%s:%d", "clickhouse", 9000)
+func NewClient(database, username, password, host string, port int) (*Client, error) {
+	address := fmt.Sprintf("%s:%d", host, port)
 
 	opts := &clickhouse.Options{
 		Addr: []string{address},
 		Auth: clickhouse.Auth{
-			Database: "analytics",
-			Username: "makhkets",
-			Password: "1324",
+			Database: database,
+			Username: username,
+			Password: password,
 		},
 		DialTimeout: 5 * time.Second,
 	}

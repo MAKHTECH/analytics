@@ -10,7 +10,6 @@ import (
 	"analytics/internal/services"
 	"analytics/pkg/logging"
 	"context"
-	"fmt"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"log"
 	"log/slog"
@@ -22,16 +21,22 @@ import (
 	"time"
 )
 
+const kafkaUI string = "localhost:8001"
+
 func main() {
 	cfg := config.MustLoad("local.json")
 	logging.SetupLogger()
-	slog.Info("starting application", slog.Any("config", cfg))
+	slog.Info("starting application", slog.Any("config", cfg), slog.String("kafka-ui", kafkaUI))
 
 	// Инициализация метрик
 	metricsClient := metrics.NewPrometheusClient()
 
 	// Инициализация хранилища clickhouse
-	chClient, err := clickhouse.NewClient()
+	chClient, err := clickhouse.NewClient(
+		cfg.Database.Database, cfg.Database.Username,
+		cfg.Database.Password, cfg.Database.Host,
+		cfg.Database.Port,
+	)
 	if err != nil {
 		log.Fatalf("Failed to connect to ClickHouse: %v", err)
 	}
@@ -78,11 +83,8 @@ func main() {
 	// Запуск HTTP сервера в отдельной горутине
 	go func() {
 		log.Printf("Starting HTTP server on port %d", cfg.App.Port)
-		slog.Info("started", slog.String("address", cfg.App.Address), slog.Int("port", cfg.App.Port))
 		if err = server.ListenAndServe(); err != nil {
 			log.Fatalf("HTTP server error: %v", err)
-		} else {
-			fmt.Println("все успешно")
 		}
 	}()
 

@@ -17,6 +17,25 @@ services:
       retries: 5
       start_period: 10s
 
+  clickhouse-migrator:
+    image: curlimages/curl:latest
+    container_name: clickhouse-migrator
+    volumes:
+      - ../../migrations/init:/init
+      - ../../migrations/clickhouse:/migrations
+    entrypoint: [ "/init/migrate.sh" ]
+    environment:
+      CLICKHOUSE_HOST: clickhouse
+      CLICKHOUSE_PORT: 8123
+      CLICKHOUSE_USER: makhkets
+      CLICKHOUSE_PASSWORD: 1324
+      CLICKHOUSE_DB: analytics
+    depends_on:
+      - clickhouse
+      - zookeeper
+      - kafka
+      - kafka-ui
+
   app:
     build:
       context: ../../
@@ -74,6 +93,19 @@ services:
       timeout: 10s
       retries: 5
       start_period: 30s
+
+  kafka-ui:
+    container_name: kafka-ui
+    image: provectuslabs/kafka-ui:latest
+    ports:
+      - "8001:8080"
+    environment:
+      DYNAMIC_CONFIG_ENABLED: true
+      KAFKA_CLUSTERS_0_NAME: analyticsMKH
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
+    depends_on:
+      kafka:
+        condition: service_healthy
 
 volumes:
   clickhouse-data:
