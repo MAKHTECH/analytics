@@ -9,6 +9,7 @@ import (
 type Config struct {
 	App      App        `json:"app"`
 	Database ClickHouse `json:"clickhouse"`
+	Kafka    Kafka
 }
 
 type App struct {
@@ -25,6 +26,12 @@ type ClickHouse struct {
 	Password string `json:"password"`
 	Database string `json:"database"`
 	Port     int    `json:"port"`
+}
+
+type Kafka struct {
+	Brokers []string `json:"brokers"`
+	Topic   string   `json:"topic"`
+	GroupID string   `json:"group_id"`
 }
 
 var config Config

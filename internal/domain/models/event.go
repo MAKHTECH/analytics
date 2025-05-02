@@ -7,10 +7,11 @@ import (
 // AnalyticsEvent представляет собой событие аналитики
 type AnalyticsEvent struct {
 	ID         string            `json:"id,omitempty"`
-	Timestamp  time.Time         `json:"timestamp"`
 	EventType  string            `json:"eventType"`
 	UserID     string            `json:"userId"`
 	Properties map[string]string `json:"properties,omitempty"`
+	Duration   int64             `json:"duration"`
+	Timestamp  time.Time         `json:"timestamp"`
 }
 
 //// test data
@@ -23,4 +24,17 @@ type AnalyticsEvent struct {
 //		"properties": {
 //			"test": "test"
 //		}
+//}
+
+//{
+//"id": "event_12345",
+//"eventType": "user_signup",
+//"userId": "user_98765",
+//"properties": {
+//"source": "landing_page",
+//"campaign": "spring_sale",
+//"referrer": "google_ads"
+//},
+//"duration": 248,
+//"timestamp": "2025-05-02T12:34:56Z"
 //}

@@ -20,7 +20,22 @@ func NewClickHouseRepository(client *Client) *Repository {
 
 // StoreEvent сохраняет событие в ClickHouse
 func (r *Repository) StoreEvent(ctx context.Context, event models.AnalyticsEvent) error {
-	panic("implement me")
+	query := `
+		INSERT INTO events (id, timestamp, eventType, userId, durationMs, properties)
+		VALUES (?, ?, ?, ?, ?, ?)
+	`
+	err := r.client.conn.Exec(ctx, query,
+		event.ID,
+		event.Timestamp,
+		event.EventType,
+		event.UserID,
+		event.Duration,
+		event.Properties,
+	)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 // GetEventsByType получает события по типу за период

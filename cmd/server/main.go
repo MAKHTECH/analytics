@@ -1,8 +1,7 @@
 package main
 
 import (
-	api "analytics/internal/api/gen"
-	"analytics/internal/api/handlers"
+	api "analytics/internal/api"
 	"analytics/internal/config"
 	"analytics/internal/infrastructure/kafka"
 	"analytics/internal/infrastructure/storage/clickhouse"
@@ -10,16 +9,16 @@ import (
 	"analytics/internal/services"
 	"analytics/pkg/logging"
 	"context"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"log"
 	"log/slog"
 	"net/http"
 	"os"
 	"os/signal"
-	"strconv"
 	"syscall"
 	"time"
 )
+
+// get event types
 
 const kafkaUI string = "localhost:8001"
 
@@ -28,10 +27,7 @@ func main() {
 	logging.SetupLogger()
 	slog.Info("starting application", slog.Any("config", cfg), slog.String("kafka-ui", kafkaUI))
 
-	// Инициализация метрик
 	metricsClient := metrics.NewPrometheusClient()
-
-	// Инициализация хранилища clickhouse
 	chClient, err := clickhouse.NewClient(
 		cfg.Database.Database, cfg.Database.Username,
 		cfg.Database.Password, cfg.Database.Host,
@@ -41,66 +37,44 @@ func main() {
 		log.Fatalf("Failed to connect to ClickHouse: %v", err)
 	}
 
-	// Создание репозитория
 	repository := clickhouse.NewClickHouseRepository(chClient)
-
-	// Создание сервиса аналитики
 	analyticsService := services.NewAnalyticsService(repository, metricsClient)
-
-	// Инициализация потребителя Kafka
 	consumer := kafka.NewConsumer(
-		[]string{"kafka:9092"},
-		"topic",
+		cfg.Kafka.Brokers, cfg.Kafka.Topic, cfg.Kafka.GroupID,
 		analyticsService,
 	)
 
-	// Контекст для graceful shutdown
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	// Запуск потребителя Kafka
 	consumer.Start(ctx)
+	server := api.InitServer(cfg.App.Address, cfg.App.Port, analyticsService)
 
-	// Инициализация HTTP сервера для API и метрик
-	serverApi := handlers.NewServerAPI(analyticsService)
-	httpServer, err := api.NewServer(serverApi)
-	if err != nil {
-		log.Fatalf("cannot create server: %v", err)
-	}
+	// Запуск graceful shutdown
+	shutdown(cancel, server, chClient, consumer)
+}
 
-	mux := http.NewServeMux()
-	mux.Handle("/", httpServer)
-	mux.Handle("/metrics", promhttp.Handler())
-
-	server := &http.Server{
-		Addr:         cfg.App.Address + ":" + strconv.Itoa(cfg.App.Port),
-		Handler:      mux,
-		ReadTimeout:  5 * time.Second,
-		WriteTimeout: 10 * time.Second,
-		IdleTimeout:  15 * time.Second,
-	}
-
-	// Запуск HTTP сервера в отдельной горутине
-	go func() {
-		log.Printf("Starting HTTP server on port %d", cfg.App.Port)
-		if err = server.ListenAndServe(); err != nil {
-			log.Fatalf("HTTP server error: %v", err)
-		}
-	}()
-
-	// Обработка сигналов для graceful shutdown
+func shutdown(cancel context.CancelFunc, server *http.Server, chClient *clickhouse.Client, consumer *kafka.Consumer) {
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
 
 	log.Println("Shutting down service...")
+
 	cancel()
 
-	// Graceful shutdown HTTP сервера
 	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer shutdownCancel()
 	if err := server.Shutdown(shutdownCtx); err != nil {
-		log.Fatalf("HTTP server shutdown error: %v", err)
+		log.Printf("HTTP server shutdown error: %v", err)
+	}
+
+	if err := chClient.Close(); err != nil {
+		log.Printf("Failed to close ClickHouse client: %v", err)
+	}
+
+	if err := consumer.Stop(); err != nil {
+		log.Printf("Failed to close kafka client: %v", err)
 	}
 
 	log.Println("Service stopped")

@@ -12,5 +12,10 @@
     "username": "makhkets",
     "password": "1324",
     "database": "analytics"
+  },
+  "kafka": {
+    "brokers": ["kafka:9092"],
+    "topic": "topic",
+    "group_id": "analytics-mkh"
   }
 }

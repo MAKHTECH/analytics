@@ -1,0 +1,11 @@
+global:
+  scrape_interval: 5s
+
+scrape_configs:
+  - job_name: 'analytics-mkh'
+    static_configs:
+    # - targets: ['localhost:8000']  # если запускаешь Go локально
+      - targets: ['app:8000']  # если в докере
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']

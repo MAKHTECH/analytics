@@ -20,11 +20,11 @@ type Consumer struct {
 }
 
 // NewConsumer создает нового потребителя Kafka
-func NewConsumer(brokers []string, topic string, service *services.AnalyticsService) *Consumer {
+func NewConsumer(brokers []string, topic, groupID string, service *services.AnalyticsService) *Consumer {
 	reader := kafka.NewReader(kafka.ReaderConfig{
 		Brokers:  brokers,
 		Topic:    topic,
-		GroupID:  "analytics-mkh",
+		GroupID:  groupID,
 		MinBytes: 10e3, // 10KB
 		MaxBytes: 10e6, // 10MB
 		MaxWait:  time.Second,
@@ -54,6 +54,11 @@ func (c *Consumer) Start(ctx context.Context) {
 	}()
 }
 
+// Stop для graceful shutdown
+func (c *Consumer) Stop() error {
+	return c.reader.Close()
+}
+
 // processMessages обрабатывает сообщения из Kafka
 func (c *Consumer) processMessages(ctx context.Context) {
 	// Установим таймаут для чтения сообщений
@@ -78,10 +83,14 @@ func (c *Consumer) processMessages(ctx context.Context) {
 	}
 
 	// Обработаем событие
-	if err := c.service.ProcessEvent(ctx, event); err != nil {
+	if err = c.service.ProcessEvent(ctx, event); err != nil {
 		log.Printf("Error processing event: %v", err)
 		return
 	}
 
-	log.Printf("Processed message: topic=%s, partition=%d, offset=%d", msg.Topic, msg.Partition, msg.Offset)
+	slog.Debug("Processed message",
+		slog.String("topic", msg.Topic),
+		slog.Int("partition", msg.Partition),
+		slog.Int64("offset", msg.Offset),
+	)
 }
