@@ -28,17 +28,11 @@ func trimTrailingSlashes(u *url.URL) {
 
 // Invoker invokes operations described by OpenAPI v3 specification.
 type Invoker interface {
-	// CreateEvent invokes createEvent operation.
-	//
-	// Отправить событие аналитики.
-	//
-	// POST /events
-	CreateEvent(ctx context.Context, request *EventRequest) (CreateEventRes, error)
 	// GetMetrics invokes getMetrics operation.
 	//
 	// Получить метрики аналитики.
 	//
-	// GET /metrics
+	// GET /get-metrics
 	GetMetrics(ctx context.Context, params GetMetricsParams) (GetMetricsRes, error)
 }
 
@@ -85,86 +79,11 @@ func (c *Client) requestURL(ctx context.Context) *url.URL {
 	return u
 }
 
-// CreateEvent invokes createEvent operation.
-//
-// Отправить событие аналитики.
-//
-// POST /events
-func (c *Client) CreateEvent(ctx context.Context, request *EventRequest) (CreateEventRes, error) {
-	res, err := c.sendCreateEvent(ctx, request)
-	return res, err
-}
-
-func (c *Client) sendCreateEvent(ctx context.Context, request *EventRequest) (res CreateEventRes, err error) {
-	otelAttrs := []attribute.KeyValue{
-		otelogen.OperationID("createEvent"),
-		semconv.HTTPRequestMethodKey.String("POST"),
-		semconv.HTTPRouteKey.String("/events"),
-	}
-
-	// Run stopwatch.
-	startTime := time.Now()
-	defer func() {
-		// Use floating point division here for higher precision (instead of Millisecond method).
-		elapsedDuration := time.Since(startTime)
-		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
-	}()
-
-	// Increment request counter.
-	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
-
-	// Start a span for this request.
-	ctx, span := c.cfg.Tracer.Start(ctx, CreateEventOperation,
-		trace.WithAttributes(otelAttrs...),
-		clientSpanKind,
-	)
-	// Track stage for error reporting.
-	var stage string
-	defer func() {
-		if err != nil {
-			span.RecordError(err)
-			span.SetStatus(codes.Error, stage)
-			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
-		}
-		span.End()
-	}()
-
-	stage = "BuildURL"
-	u := uri.Clone(c.requestURL(ctx))
-	var pathParts [1]string
-	pathParts[0] = "/events"
-	uri.AddPathParts(u, pathParts[:]...)
-
-	stage = "EncodeRequest"
-	r, err := ht.NewRequest(ctx, "POST", u)
-	if err != nil {
-		return res, errors.Wrap(err, "create request")
-	}
-	if err := encodeCreateEventRequest(request, r); err != nil {
-		return res, errors.Wrap(err, "encode request")
-	}
-
-	stage = "SendRequest"
-	resp, err := c.cfg.Client.Do(r)
-	if err != nil {
-		return res, errors.Wrap(err, "do request")
-	}
-	defer resp.Body.Close()
-
-	stage = "DecodeResponse"
-	result, err := decodeCreateEventResponse(resp)
-	if err != nil {
-		return res, errors.Wrap(err, "decode response")
-	}
-
-	return result, nil
-}
-
 // GetMetrics invokes getMetrics operation.
 //
 // Получить метрики аналитики.
 //
-// GET /metrics
+// GET /get-metrics
 func (c *Client) GetMetrics(ctx context.Context, params GetMetricsParams) (GetMetricsRes, error) {
 	res, err := c.sendGetMetrics(ctx, params)
 	return res, err
@@ -174,7 +93,7 @@ func (c *Client) sendGetMetrics(ctx context.Context, params GetMetricsParams) (r
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("getMetrics"),
 		semconv.HTTPRequestMethodKey.String("GET"),
-		semconv.HTTPRouteKey.String("/metrics"),
+		semconv.HTTPRouteKey.String("/get-metrics"),
 	}
 
 	// Run stopwatch.
@@ -207,7 +126,7 @@ func (c *Client) sendGetMetrics(ctx context.Context, params GetMetricsParams) (r
 	stage = "BuildURL"
 	u := uri.Clone(c.requestURL(ctx))
 	var pathParts [1]string
-	pathParts[0] = "/metrics"
+	pathParts[0] = "/get-metrics"
 	uri.AddPathParts(u, pathParts[:]...)
 
 	stage = "EncodeQueryParams"

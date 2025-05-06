@@ -48,58 +48,24 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			break
 		}
 		switch elem[0] {
-		case '/': // Prefix: "/"
+		case '/': // Prefix: "/get-metrics"
 
-			if l := len("/"); len(elem) >= l && elem[0:l] == "/" {
+			if l := len("/get-metrics"); len(elem) >= l && elem[0:l] == "/get-metrics" {
 				elem = elem[l:]
 			} else {
 				break
 			}
 
 			if len(elem) == 0 {
-				break
-			}
-			switch elem[0] {
-			case 'e': // Prefix: "events"
-
-				if l := len("events"); len(elem) >= l && elem[0:l] == "events" {
-					elem = elem[l:]
-				} else {
-					break
+				// Leaf node.
+				switch r.Method {
+				case "GET":
+					s.handleGetMetricsRequest([0]string{}, elemIsEscaped, w, r)
+				default:
+					s.notAllowed(w, r, "GET")
 				}
 
-				if len(elem) == 0 {
-					// Leaf node.
-					switch r.Method {
-					case "POST":
-						s.handleCreateEventRequest([0]string{}, elemIsEscaped, w, r)
-					default:
-						s.notAllowed(w, r, "POST")
-					}
-
-					return
-				}
-
-			case 'm': // Prefix: "metrics"
-
-				if l := len("metrics"); len(elem) >= l && elem[0:l] == "metrics" {
-					elem = elem[l:]
-				} else {
-					break
-				}
-
-				if len(elem) == 0 {
-					// Leaf node.
-					switch r.Method {
-					case "GET":
-						s.handleGetMetricsRequest([0]string{}, elemIsEscaped, w, r)
-					default:
-						s.notAllowed(w, r, "GET")
-					}
-
-					return
-				}
-
+				return
 			}
 
 		}
@@ -182,66 +148,28 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 			break
 		}
 		switch elem[0] {
-		case '/': // Prefix: "/"
+		case '/': // Prefix: "/get-metrics"
 
-			if l := len("/"); len(elem) >= l && elem[0:l] == "/" {
+			if l := len("/get-metrics"); len(elem) >= l && elem[0:l] == "/get-metrics" {
 				elem = elem[l:]
 			} else {
 				break
 			}
 
 			if len(elem) == 0 {
-				break
-			}
-			switch elem[0] {
-			case 'e': // Prefix: "events"
-
-				if l := len("events"); len(elem) >= l && elem[0:l] == "events" {
-					elem = elem[l:]
-				} else {
-					break
+				// Leaf node.
+				switch method {
+				case "GET":
+					r.name = GetMetricsOperation
+					r.summary = "Получить метрики аналитики"
+					r.operationID = "getMetrics"
+					r.pathPattern = "/get-metrics"
+					r.args = args
+					r.count = 0
+					return r, true
+				default:
+					return
 				}
-
-				if len(elem) == 0 {
-					// Leaf node.
-					switch method {
-					case "POST":
-						r.name = CreateEventOperation
-						r.summary = "Отправить событие аналитики"
-						r.operationID = "createEvent"
-						r.pathPattern = "/events"
-						r.args = args
-						r.count = 0
-						return r, true
-					default:
-						return
-					}
-				}
-
-			case 'm': // Prefix: "metrics"
-
-				if l := len("metrics"); len(elem) >= l && elem[0:l] == "metrics" {
-					elem = elem[l:]
-				} else {
-					break
-				}
-
-				if len(elem) == 0 {
-					// Leaf node.
-					switch method {
-					case "GET":
-						r.name = GetMetricsOperation
-						r.summary = "Получить метрики аналитики"
-						r.operationID = "getMetrics"
-						r.pathPattern = "/metrics"
-						r.args = args
-						r.count = 0
-						return r, true
-					default:
-						return
-					}
-				}
-
 			}
 
 		}

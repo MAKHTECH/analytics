@@ -13,20 +13,11 @@ type UnimplementedHandler struct{}
 
 var _ Handler = UnimplementedHandler{}
 
-// CreateEvent implements createEvent operation.
-//
-// Отправить событие аналитики.
-//
-// POST /events
-func (UnimplementedHandler) CreateEvent(ctx context.Context, req *EventRequest) (r CreateEventRes, _ error) {
-	return r, ht.ErrNotImplemented
-}
-
 // GetMetrics implements getMetrics operation.
 //
 // Получить метрики аналитики.
 //
-// GET /metrics
+// GET /get-metrics
 func (UnimplementedHandler) GetMetrics(ctx context.Context, params GetMetricsParams) (r GetMetricsRes, _ error) {
 	return r, ht.ErrNotImplemented
 }

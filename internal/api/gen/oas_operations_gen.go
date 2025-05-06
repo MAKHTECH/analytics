@@ -6,6 +6,5 @@ package api
 type OperationName = string
 
 const (
-	CreateEventOperation OperationName = "CreateEvent"
-	GetMetricsOperation  OperationName = "GetMetrics"
+	GetMetricsOperation OperationName = "GetMetrics"
 )

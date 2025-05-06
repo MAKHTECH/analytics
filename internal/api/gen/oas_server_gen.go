@@ -8,17 +8,11 @@ import (
 
 // Handler handles operations described by OpenAPI v3 specification.
 type Handler interface {
-	// CreateEvent implements createEvent operation.
-	//
-	// Отправить событие аналитики.
-	//
-	// POST /events
-	CreateEvent(ctx context.Context, req *EventRequest) (CreateEventRes, error)
 	// GetMetrics implements getMetrics operation.
 	//
 	// Получить метрики аналитики.
 	//
-	// GET /metrics
+	// GET /get-metrics
 	GetMetrics(ctx context.Context, params GetMetricsParams) (GetMetricsRes, error)
 }
 

@@ -4,30 +4,7 @@ info:
   version: 1.0.0
   description: API для сервиса аналитики
 paths:
-  /events:
-    post:
-      summary: Отправить событие аналитики
-      operationId: createEvent
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/EventRequest'
-      responses:
-        '200':
-          description: Событие успешно обработано
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/EventResponse'
-        '400':
-          description: Некорректный запрос
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-  /metrics:
+  /get-metrics:
     get:
       summary: Получить метрики аналитики
       operationId: getMetrics
