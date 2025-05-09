@@ -36,81 +36,156 @@ func (s *ErrorResponse) SetCode(val OptInt) {
 
 func (*ErrorResponse) getMetricsRes() {}
 
-// Ref: #/components/schemas/MetricsResponse
-type MetricsResponse struct {
-	// Количество событий по типам.
-	Counts OptMetricsResponseCounts `json:"counts"`
-	// Количество уникальных пользователей.
-	Users  OptInt                   `json:"users"`
-	Period OptMetricsResponsePeriod `json:"period"`
+// Ref: #/components/schemas/Metric
+type Metric struct {
+	// Уникальный идентификатор метрики.
+	ID OptString `json:"id"`
+	// Временная метка события.
+	Timestamp OptDateTime `json:"timestamp"`
+	// Тип события.
+	EventType OptString `json:"eventType"`
+	// ID пользователя.
+	UserId OptString `json:"userId"`
+	// Длительность события в миллисекундах.
+	DurationMs OptInt `json:"durationMs"`
+	// Дополнительные свойства события.
+	Properties OptMetricProperties `json:"properties"`
 }
 
-// GetCounts returns the value of Counts.
-func (s *MetricsResponse) GetCounts() OptMetricsResponseCounts {
-	return s.Counts
+// GetID returns the value of ID.
+func (s *Metric) GetID() OptString {
+	return s.ID
 }
 
-// GetUsers returns the value of Users.
-func (s *MetricsResponse) GetUsers() OptInt {
-	return s.Users
+// GetTimestamp returns the value of Timestamp.
+func (s *Metric) GetTimestamp() OptDateTime {
+	return s.Timestamp
 }
 
-// GetPeriod returns the value of Period.
-func (s *MetricsResponse) GetPeriod() OptMetricsResponsePeriod {
-	return s.Period
+// GetEventType returns the value of EventType.
+func (s *Metric) GetEventType() OptString {
+	return s.EventType
 }
 
-// SetCounts sets the value of Counts.
-func (s *MetricsResponse) SetCounts(val OptMetricsResponseCounts) {
-	s.Counts = val
+// GetUserId returns the value of UserId.
+func (s *Metric) GetUserId() OptString {
+	return s.UserId
 }
 
-// SetUsers sets the value of Users.
-func (s *MetricsResponse) SetUsers(val OptInt) {
-	s.Users = val
+// GetDurationMs returns the value of DurationMs.
+func (s *Metric) GetDurationMs() OptInt {
+	return s.DurationMs
 }
 
-// SetPeriod sets the value of Period.
-func (s *MetricsResponse) SetPeriod(val OptMetricsResponsePeriod) {
-	s.Period = val
+// GetProperties returns the value of Properties.
+func (s *Metric) GetProperties() OptMetricProperties {
+	return s.Properties
 }
 
-func (*MetricsResponse) getMetricsRes() {}
+// SetID sets the value of ID.
+func (s *Metric) SetID(val OptString) {
+	s.ID = val
+}
 
-// Количество событий по типам.
-type MetricsResponseCounts map[string]int
+// SetTimestamp sets the value of Timestamp.
+func (s *Metric) SetTimestamp(val OptDateTime) {
+	s.Timestamp = val
+}
 
-func (s *MetricsResponseCounts) init() MetricsResponseCounts {
+// SetEventType sets the value of EventType.
+func (s *Metric) SetEventType(val OptString) {
+	s.EventType = val
+}
+
+// SetUserId sets the value of UserId.
+func (s *Metric) SetUserId(val OptString) {
+	s.UserId = val
+}
+
+// SetDurationMs sets the value of DurationMs.
+func (s *Metric) SetDurationMs(val OptInt) {
+	s.DurationMs = val
+}
+
+// SetProperties sets the value of Properties.
+func (s *Metric) SetProperties(val OptMetricProperties) {
+	s.Properties = val
+}
+
+// Дополнительные свойства события.
+type MetricProperties map[string]string
+
+func (s *MetricProperties) init() MetricProperties {
 	m := *s
 	if m == nil {
-		m = map[string]int{}
+		m = map[string]string{}
 		*s = m
 	}
 	return m
 }
 
-type MetricsResponsePeriod struct {
+// Ref: #/components/schemas/MetricsListResponse
+type MetricsListResponse struct {
+	Items []Metric `json:"items"`
+	// Общее количество найденных метрик.
+	TotalCount OptInt                       `json:"totalCount"`
+	Period     OptMetricsListResponsePeriod `json:"period"`
+}
+
+// GetItems returns the value of Items.
+func (s *MetricsListResponse) GetItems() []Metric {
+	return s.Items
+}
+
+// GetTotalCount returns the value of TotalCount.
+func (s *MetricsListResponse) GetTotalCount() OptInt {
+	return s.TotalCount
+}
+
+// GetPeriod returns the value of Period.
+func (s *MetricsListResponse) GetPeriod() OptMetricsListResponsePeriod {
+	return s.Period
+}
+
+// SetItems sets the value of Items.
+func (s *MetricsListResponse) SetItems(val []Metric) {
+	s.Items = val
+}
+
+// SetTotalCount sets the value of TotalCount.
+func (s *MetricsListResponse) SetTotalCount(val OptInt) {
+	s.TotalCount = val
+}
+
+// SetPeriod sets the value of Period.
+func (s *MetricsListResponse) SetPeriod(val OptMetricsListResponsePeriod) {
+	s.Period = val
+}
+
+func (*MetricsListResponse) getMetricsRes() {}
+
+type MetricsListResponsePeriod struct {
 	From OptDateTime `json:"from"`
 	To   OptDateTime `json:"to"`
 }
 
 // GetFrom returns the value of From.
-func (s *MetricsResponsePeriod) GetFrom() OptDateTime {
+func (s *MetricsListResponsePeriod) GetFrom() OptDateTime {
 	return s.From
 }
 
 // GetTo returns the value of To.
-func (s *MetricsResponsePeriod) GetTo() OptDateTime {
+func (s *MetricsListResponsePeriod) GetTo() OptDateTime {
 	return s.To
 }
 
 // SetFrom sets the value of From.
-func (s *MetricsResponsePeriod) SetFrom(val OptDateTime) {
+func (s *MetricsListResponsePeriod) SetFrom(val OptDateTime) {
 	s.From = val
 }
 
 // SetTo sets the value of To.
-func (s *MetricsResponsePeriod) SetTo(val OptDateTime) {
+func (s *MetricsListResponsePeriod) SetTo(val OptDateTime) {
 	s.To = val
 }
 
@@ -206,38 +281,38 @@ func (o OptInt) Or(d int) int {
 	return d
 }
 
-// NewOptMetricsResponseCounts returns new OptMetricsResponseCounts with value set to v.
-func NewOptMetricsResponseCounts(v MetricsResponseCounts) OptMetricsResponseCounts {
-	return OptMetricsResponseCounts{
+// NewOptMetricProperties returns new OptMetricProperties with value set to v.
+func NewOptMetricProperties(v MetricProperties) OptMetricProperties {
+	return OptMetricProperties{
 		Value: v,
 		Set:   true,
 	}
 }
 
-// OptMetricsResponseCounts is optional MetricsResponseCounts.
-type OptMetricsResponseCounts struct {
-	Value MetricsResponseCounts
+// OptMetricProperties is optional MetricProperties.
+type OptMetricProperties struct {
+	Value MetricProperties
 	Set   bool
 }
 
-// IsSet returns true if OptMetricsResponseCounts was set.
-func (o OptMetricsResponseCounts) IsSet() bool { return o.Set }
+// IsSet returns true if OptMetricProperties was set.
+func (o OptMetricProperties) IsSet() bool { return o.Set }
 
 // Reset unsets value.
-func (o *OptMetricsResponseCounts) Reset() {
-	var v MetricsResponseCounts
+func (o *OptMetricProperties) Reset() {
+	var v MetricProperties
 	o.Value = v
 	o.Set = false
 }
 
 // SetTo sets value to v.
-func (o *OptMetricsResponseCounts) SetTo(v MetricsResponseCounts) {
+func (o *OptMetricProperties) SetTo(v MetricProperties) {
 	o.Set = true
 	o.Value = v
 }
 
 // Get returns value and boolean that denotes whether value was set.
-func (o OptMetricsResponseCounts) Get() (v MetricsResponseCounts, ok bool) {
+func (o OptMetricProperties) Get() (v MetricProperties, ok bool) {
 	if !o.Set {
 		return v, false
 	}
@@ -245,45 +320,45 @@ func (o OptMetricsResponseCounts) Get() (v MetricsResponseCounts, ok bool) {
 }
 
 // Or returns value if set, or given parameter if does not.
-func (o OptMetricsResponseCounts) Or(d MetricsResponseCounts) MetricsResponseCounts {
+func (o OptMetricProperties) Or(d MetricProperties) MetricProperties {
 	if v, ok := o.Get(); ok {
 		return v
 	}
 	return d
 }
 
-// NewOptMetricsResponsePeriod returns new OptMetricsResponsePeriod with value set to v.
-func NewOptMetricsResponsePeriod(v MetricsResponsePeriod) OptMetricsResponsePeriod {
-	return OptMetricsResponsePeriod{
+// NewOptMetricsListResponsePeriod returns new OptMetricsListResponsePeriod with value set to v.
+func NewOptMetricsListResponsePeriod(v MetricsListResponsePeriod) OptMetricsListResponsePeriod {
+	return OptMetricsListResponsePeriod{
 		Value: v,
 		Set:   true,
 	}
 }
 
-// OptMetricsResponsePeriod is optional MetricsResponsePeriod.
-type OptMetricsResponsePeriod struct {
-	Value MetricsResponsePeriod
+// OptMetricsListResponsePeriod is optional MetricsListResponsePeriod.
+type OptMetricsListResponsePeriod struct {
+	Value MetricsListResponsePeriod
 	Set   bool
 }
 
-// IsSet returns true if OptMetricsResponsePeriod was set.
-func (o OptMetricsResponsePeriod) IsSet() bool { return o.Set }
+// IsSet returns true if OptMetricsListResponsePeriod was set.
+func (o OptMetricsListResponsePeriod) IsSet() bool { return o.Set }
 
 // Reset unsets value.
-func (o *OptMetricsResponsePeriod) Reset() {
-	var v MetricsResponsePeriod
+func (o *OptMetricsListResponsePeriod) Reset() {
+	var v MetricsListResponsePeriod
 	o.Value = v
 	o.Set = false
 }
 
 // SetTo sets value to v.
-func (o *OptMetricsResponsePeriod) SetTo(v MetricsResponsePeriod) {
+func (o *OptMetricsListResponsePeriod) SetTo(v MetricsListResponsePeriod) {
 	o.Set = true
 	o.Value = v
 }
 
 // Get returns value and boolean that denotes whether value was set.
-func (o OptMetricsResponsePeriod) Get() (v MetricsResponsePeriod, ok bool) {
+func (o OptMetricsListResponsePeriod) Get() (v MetricsListResponsePeriod, ok bool) {
 	if !o.Set {
 		return v, false
 	}
@@ -291,7 +366,7 @@ func (o OptMetricsResponsePeriod) Get() (v MetricsResponsePeriod, ok bool) {
 }
 
 // Or returns value if set, or given parameter if does not.
-func (o OptMetricsResponsePeriod) Or(d MetricsResponsePeriod) MetricsResponsePeriod {
+func (o OptMetricsListResponsePeriod) Or(d MetricsListResponsePeriod) MetricsListResponsePeriod {
 	if v, ok := o.Get(); ok {
 		return v
 	}

@@ -92,24 +92,232 @@ func (s *ErrorResponse) UnmarshalJSON(data []byte) error {
 }
 
 // Encode implements json.Marshaler.
-func (s *MetricsResponse) Encode(e *jx.Encoder) {
+func (s *Metric) Encode(e *jx.Encoder) {
 	e.ObjStart()
 	s.encodeFields(e)
 	e.ObjEnd()
 }
 
 // encodeFields encodes fields.
-func (s *MetricsResponse) encodeFields(e *jx.Encoder) {
+func (s *Metric) encodeFields(e *jx.Encoder) {
 	{
-		if s.Counts.Set {
-			e.FieldStart("counts")
-			s.Counts.Encode(e)
+		if s.ID.Set {
+			e.FieldStart("id")
+			s.ID.Encode(e)
 		}
 	}
 	{
-		if s.Users.Set {
-			e.FieldStart("users")
-			s.Users.Encode(e)
+		if s.Timestamp.Set {
+			e.FieldStart("timestamp")
+			s.Timestamp.Encode(e, json.EncodeDateTime)
+		}
+	}
+	{
+		if s.EventType.Set {
+			e.FieldStart("eventType")
+			s.EventType.Encode(e)
+		}
+	}
+	{
+		if s.UserId.Set {
+			e.FieldStart("userId")
+			s.UserId.Encode(e)
+		}
+	}
+	{
+		if s.DurationMs.Set {
+			e.FieldStart("durationMs")
+			s.DurationMs.Encode(e)
+		}
+	}
+	{
+		if s.Properties.Set {
+			e.FieldStart("properties")
+			s.Properties.Encode(e)
+		}
+	}
+}
+
+var jsonFieldsNameOfMetric = [6]string{
+	0: "id",
+	1: "timestamp",
+	2: "eventType",
+	3: "userId",
+	4: "durationMs",
+	5: "properties",
+}
+
+// Decode decodes Metric from json.
+func (s *Metric) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode Metric to nil")
+	}
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "id":
+			if err := func() error {
+				s.ID.Reset()
+				if err := s.ID.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"id\"")
+			}
+		case "timestamp":
+			if err := func() error {
+				s.Timestamp.Reset()
+				if err := s.Timestamp.Decode(d, json.DecodeDateTime); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"timestamp\"")
+			}
+		case "eventType":
+			if err := func() error {
+				s.EventType.Reset()
+				if err := s.EventType.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"eventType\"")
+			}
+		case "userId":
+			if err := func() error {
+				s.UserId.Reset()
+				if err := s.UserId.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"userId\"")
+			}
+		case "durationMs":
+			if err := func() error {
+				s.DurationMs.Reset()
+				if err := s.DurationMs.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"durationMs\"")
+			}
+		case "properties":
+			if err := func() error {
+				s.Properties.Reset()
+				if err := s.Properties.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"properties\"")
+			}
+		default:
+			return d.Skip()
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode Metric")
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *Metric) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *Metric) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s MetricProperties) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields implements json.Marshaler.
+func (s MetricProperties) encodeFields(e *jx.Encoder) {
+	for k, elem := range s {
+		e.FieldStart(k)
+
+		e.Str(elem)
+	}
+}
+
+// Decode decodes MetricProperties from json.
+func (s *MetricProperties) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode MetricProperties to nil")
+	}
+	m := s.init()
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		var elem string
+		if err := func() error {
+			v, err := d.Str()
+			elem = string(v)
+			if err != nil {
+				return err
+			}
+			return nil
+		}(); err != nil {
+			return errors.Wrapf(err, "decode field %q", k)
+		}
+		m[string(k)] = elem
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode MetricProperties")
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s MetricProperties) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *MetricProperties) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s *MetricsListResponse) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *MetricsListResponse) encodeFields(e *jx.Encoder) {
+	{
+		if s.Items != nil {
+			e.FieldStart("items")
+			e.ArrStart()
+			for _, elem := range s.Items {
+				elem.Encode(e)
+			}
+			e.ArrEnd()
+		}
+	}
+	{
+		if s.TotalCount.Set {
+			e.FieldStart("totalCount")
+			s.TotalCount.Encode(e)
 		}
 	}
 	{
@@ -120,39 +328,46 @@ func (s *MetricsResponse) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfMetricsResponse = [3]string{
-	0: "counts",
-	1: "users",
+var jsonFieldsNameOfMetricsListResponse = [3]string{
+	0: "items",
+	1: "totalCount",
 	2: "period",
 }
 
-// Decode decodes MetricsResponse from json.
-func (s *MetricsResponse) Decode(d *jx.Decoder) error {
+// Decode decodes MetricsListResponse from json.
+func (s *MetricsListResponse) Decode(d *jx.Decoder) error {
 	if s == nil {
-		return errors.New("invalid: unable to decode MetricsResponse to nil")
+		return errors.New("invalid: unable to decode MetricsListResponse to nil")
 	}
 
 	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
 		switch string(k) {
-		case "counts":
+		case "items":
 			if err := func() error {
-				s.Counts.Reset()
-				if err := s.Counts.Decode(d); err != nil {
+				s.Items = make([]Metric, 0)
+				if err := d.Arr(func(d *jx.Decoder) error {
+					var elem Metric
+					if err := elem.Decode(d); err != nil {
+						return err
+					}
+					s.Items = append(s.Items, elem)
+					return nil
+				}); err != nil {
 					return err
 				}
 				return nil
 			}(); err != nil {
-				return errors.Wrap(err, "decode field \"counts\"")
+				return errors.Wrap(err, "decode field \"items\"")
 			}
-		case "users":
+		case "totalCount":
 			if err := func() error {
-				s.Users.Reset()
-				if err := s.Users.Decode(d); err != nil {
+				s.TotalCount.Reset()
+				if err := s.TotalCount.Decode(d); err != nil {
 					return err
 				}
 				return nil
 			}(); err != nil {
-				return errors.Wrap(err, "decode field \"users\"")
+				return errors.Wrap(err, "decode field \"totalCount\"")
 			}
 		case "period":
 			if err := func() error {
@@ -169,90 +384,34 @@ func (s *MetricsResponse) Decode(d *jx.Decoder) error {
 		}
 		return nil
 	}); err != nil {
-		return errors.Wrap(err, "decode MetricsResponse")
+		return errors.Wrap(err, "decode MetricsListResponse")
 	}
 
 	return nil
 }
 
 // MarshalJSON implements stdjson.Marshaler.
-func (s *MetricsResponse) MarshalJSON() ([]byte, error) {
+func (s *MetricsListResponse) MarshalJSON() ([]byte, error) {
 	e := jx.Encoder{}
 	s.Encode(&e)
 	return e.Bytes(), nil
 }
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
-func (s *MetricsResponse) UnmarshalJSON(data []byte) error {
+func (s *MetricsListResponse) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
 
 // Encode implements json.Marshaler.
-func (s MetricsResponseCounts) Encode(e *jx.Encoder) {
-	e.ObjStart()
-	s.encodeFields(e)
-	e.ObjEnd()
-}
-
-// encodeFields implements json.Marshaler.
-func (s MetricsResponseCounts) encodeFields(e *jx.Encoder) {
-	for k, elem := range s {
-		e.FieldStart(k)
-
-		e.Int(elem)
-	}
-}
-
-// Decode decodes MetricsResponseCounts from json.
-func (s *MetricsResponseCounts) Decode(d *jx.Decoder) error {
-	if s == nil {
-		return errors.New("invalid: unable to decode MetricsResponseCounts to nil")
-	}
-	m := s.init()
-	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
-		var elem int
-		if err := func() error {
-			v, err := d.Int()
-			elem = int(v)
-			if err != nil {
-				return err
-			}
-			return nil
-		}(); err != nil {
-			return errors.Wrapf(err, "decode field %q", k)
-		}
-		m[string(k)] = elem
-		return nil
-	}); err != nil {
-		return errors.Wrap(err, "decode MetricsResponseCounts")
-	}
-
-	return nil
-}
-
-// MarshalJSON implements stdjson.Marshaler.
-func (s MetricsResponseCounts) MarshalJSON() ([]byte, error) {
-	e := jx.Encoder{}
-	s.Encode(&e)
-	return e.Bytes(), nil
-}
-
-// UnmarshalJSON implements stdjson.Unmarshaler.
-func (s *MetricsResponseCounts) UnmarshalJSON(data []byte) error {
-	d := jx.DecodeBytes(data)
-	return s.Decode(d)
-}
-
-// Encode implements json.Marshaler.
-func (s *MetricsResponsePeriod) Encode(e *jx.Encoder) {
+func (s *MetricsListResponsePeriod) Encode(e *jx.Encoder) {
 	e.ObjStart()
 	s.encodeFields(e)
 	e.ObjEnd()
 }
 
 // encodeFields encodes fields.
-func (s *MetricsResponsePeriod) encodeFields(e *jx.Encoder) {
+func (s *MetricsListResponsePeriod) encodeFields(e *jx.Encoder) {
 	{
 		if s.From.Set {
 			e.FieldStart("from")
@@ -267,15 +426,15 @@ func (s *MetricsResponsePeriod) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfMetricsResponsePeriod = [2]string{
+var jsonFieldsNameOfMetricsListResponsePeriod = [2]string{
 	0: "from",
 	1: "to",
 }
 
-// Decode decodes MetricsResponsePeriod from json.
-func (s *MetricsResponsePeriod) Decode(d *jx.Decoder) error {
+// Decode decodes MetricsListResponsePeriod from json.
+func (s *MetricsListResponsePeriod) Decode(d *jx.Decoder) error {
 	if s == nil {
-		return errors.New("invalid: unable to decode MetricsResponsePeriod to nil")
+		return errors.New("invalid: unable to decode MetricsListResponsePeriod to nil")
 	}
 
 	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
@@ -305,21 +464,21 @@ func (s *MetricsResponsePeriod) Decode(d *jx.Decoder) error {
 		}
 		return nil
 	}); err != nil {
-		return errors.Wrap(err, "decode MetricsResponsePeriod")
+		return errors.Wrap(err, "decode MetricsListResponsePeriod")
 	}
 
 	return nil
 }
 
 // MarshalJSON implements stdjson.Marshaler.
-func (s *MetricsResponsePeriod) MarshalJSON() ([]byte, error) {
+func (s *MetricsListResponsePeriod) MarshalJSON() ([]byte, error) {
 	e := jx.Encoder{}
 	s.Encode(&e)
 	return e.Bytes(), nil
 }
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
-func (s *MetricsResponsePeriod) UnmarshalJSON(data []byte) error {
+func (s *MetricsListResponsePeriod) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
@@ -394,21 +553,21 @@ func (s *OptInt) UnmarshalJSON(data []byte) error {
 	return s.Decode(d)
 }
 
-// Encode encodes MetricsResponseCounts as json.
-func (o OptMetricsResponseCounts) Encode(e *jx.Encoder) {
+// Encode encodes MetricProperties as json.
+func (o OptMetricProperties) Encode(e *jx.Encoder) {
 	if !o.Set {
 		return
 	}
 	o.Value.Encode(e)
 }
 
-// Decode decodes MetricsResponseCounts from json.
-func (o *OptMetricsResponseCounts) Decode(d *jx.Decoder) error {
+// Decode decodes MetricProperties from json.
+func (o *OptMetricProperties) Decode(d *jx.Decoder) error {
 	if o == nil {
-		return errors.New("invalid: unable to decode OptMetricsResponseCounts to nil")
+		return errors.New("invalid: unable to decode OptMetricProperties to nil")
 	}
 	o.Set = true
-	o.Value = make(MetricsResponseCounts)
+	o.Value = make(MetricProperties)
 	if err := o.Value.Decode(d); err != nil {
 		return err
 	}
@@ -416,30 +575,30 @@ func (o *OptMetricsResponseCounts) Decode(d *jx.Decoder) error {
 }
 
 // MarshalJSON implements stdjson.Marshaler.
-func (s OptMetricsResponseCounts) MarshalJSON() ([]byte, error) {
+func (s OptMetricProperties) MarshalJSON() ([]byte, error) {
 	e := jx.Encoder{}
 	s.Encode(&e)
 	return e.Bytes(), nil
 }
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
-func (s *OptMetricsResponseCounts) UnmarshalJSON(data []byte) error {
+func (s *OptMetricProperties) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
 
-// Encode encodes MetricsResponsePeriod as json.
-func (o OptMetricsResponsePeriod) Encode(e *jx.Encoder) {
+// Encode encodes MetricsListResponsePeriod as json.
+func (o OptMetricsListResponsePeriod) Encode(e *jx.Encoder) {
 	if !o.Set {
 		return
 	}
 	o.Value.Encode(e)
 }
 
-// Decode decodes MetricsResponsePeriod from json.
-func (o *OptMetricsResponsePeriod) Decode(d *jx.Decoder) error {
+// Decode decodes MetricsListResponsePeriod from json.
+func (o *OptMetricsListResponsePeriod) Decode(d *jx.Decoder) error {
 	if o == nil {
-		return errors.New("invalid: unable to decode OptMetricsResponsePeriod to nil")
+		return errors.New("invalid: unable to decode OptMetricsListResponsePeriod to nil")
 	}
 	o.Set = true
 	if err := o.Value.Decode(d); err != nil {
@@ -449,14 +608,14 @@ func (o *OptMetricsResponsePeriod) Decode(d *jx.Decoder) error {
 }
 
 // MarshalJSON implements stdjson.Marshaler.
-func (s OptMetricsResponsePeriod) MarshalJSON() ([]byte, error) {
+func (s OptMetricsListResponsePeriod) MarshalJSON() ([]byte, error) {
 	e := jx.Encoder{}
 	s.Encode(&e)
 	return e.Bytes(), nil
 }
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
-func (s *OptMetricsResponsePeriod) UnmarshalJSON(data []byte) error {
+func (s *OptMetricsListResponsePeriod) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }

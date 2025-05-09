@@ -30,7 +30,7 @@ func decodeGetMetricsResponse(resp *http.Response) (res GetMetricsRes, _ error) 
 			}
 			d := jx.DecodeBytes(buf)
 
-			var response MetricsResponse
+			var response MetricsListResponse
 			if err := func() error {
 				if err := response.Decode(d); err != nil {
 					return err

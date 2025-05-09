@@ -22,10 +22,6 @@ func NewServerAPI(service AnalyticService) *ServerAPI {
 	}
 }
 
-func (s *ServerAPI) CreateEvent(ctx context.Context, req *api.EventRequest) (api.CreateEventRes, error) {
-	panic("implement me")
-}
-
 func (s *ServerAPI) GetMetrics(ctx context.Context, params api.GetMetricsParams) (api.GetMetricsRes, error) {
 	panic("implement me")
 }

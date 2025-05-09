@@ -136,6 +136,10 @@ func (s *Server) handleGetMetricsRequest(args [0]string, argsEscaped bool, w htt
 					Name: "eventType",
 					In:   "query",
 				}: params.EventType,
+				{
+					Name: "userId",
+					In:   "query",
+				}: params.UserId,
 			},
 			Raw: r,
 		}

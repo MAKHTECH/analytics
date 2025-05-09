@@ -14,12 +14,14 @@ import (
 
 // GetMetricsParams is parameters of getMetrics operation.
 type GetMetricsParams struct {
-	// Начальная дата для выборки.
-	From OptDateTime
-	// Конечная дата для выборки.
-	To OptDateTime
+	// Начальная дата для выборки (формат/:/ 2025-05-02 12:34:56).
+	From time.Time
+	// Конечная дата для выборки (формат/:/ 2025-05-02 12:34:56).
+	To time.Time
 	// Тип события для фильтрации.
 	EventType OptString
+	// ID пользователя для фильтрации.
+	UserId OptString
 }
 
 func unpackGetMetricsParams(packed middleware.Parameters) (params GetMetricsParams) {
@@ -28,18 +30,14 @@ func unpackGetMetricsParams(packed middleware.Parameters) (params GetMetricsPara
 			Name: "from",
 			In:   "query",
 		}
-		if v, ok := packed[key]; ok {
-			params.From = v.(OptDateTime)
-		}
+		params.From = packed[key].(time.Time)
 	}
 	{
 		key := middleware.ParameterKey{
 			Name: "to",
 			In:   "query",
 		}
-		if v, ok := packed[key]; ok {
-			params.To = v.(OptDateTime)
-		}
+		params.To = packed[key].(time.Time)
 	}
 	{
 		key := middleware.ParameterKey{
@@ -48,6 +46,15 @@ func unpackGetMetricsParams(packed middleware.Parameters) (params GetMetricsPara
 		}
 		if v, ok := packed[key]; ok {
 			params.EventType = v.(OptString)
+		}
+	}
+	{
+		key := middleware.ParameterKey{
+			Name: "userId",
+			In:   "query",
+		}
+		if v, ok := packed[key]; ok {
+			params.UserId = v.(OptString)
 		}
 	}
 	return params
@@ -65,28 +72,23 @@ func decodeGetMetricsParams(args [0]string, argsEscaped bool, r *http.Request) (
 
 		if err := q.HasParam(cfg); err == nil {
 			if err := q.DecodeParam(cfg, func(d uri.Decoder) error {
-				var paramsDotFromVal time.Time
-				if err := func() error {
-					val, err := d.DecodeValue()
-					if err != nil {
-						return err
-					}
-
-					c, err := conv.ToDateTime(val)
-					if err != nil {
-						return err
-					}
-
-					paramsDotFromVal = c
-					return nil
-				}(); err != nil {
+				val, err := d.DecodeValue()
+				if err != nil {
 					return err
 				}
-				params.From.SetTo(paramsDotFromVal)
+
+				c, err := conv.ToDateTime(val)
+				if err != nil {
+					return err
+				}
+
+				params.From = c
 				return nil
 			}); err != nil {
 				return err
 			}
+		} else {
+			return err
 		}
 		return nil
 	}(); err != nil {
@@ -106,28 +108,23 @@ func decodeGetMetricsParams(args [0]string, argsEscaped bool, r *http.Request) (
 
 		if err := q.HasParam(cfg); err == nil {
 			if err := q.DecodeParam(cfg, func(d uri.Decoder) error {
-				var paramsDotToVal time.Time
-				if err := func() error {
-					val, err := d.DecodeValue()
-					if err != nil {
-						return err
-					}
-
-					c, err := conv.ToDateTime(val)
-					if err != nil {
-						return err
-					}
-
-					paramsDotToVal = c
-					return nil
-				}(); err != nil {
+				val, err := d.DecodeValue()
+				if err != nil {
 					return err
 				}
-				params.To.SetTo(paramsDotToVal)
+
+				c, err := conv.ToDateTime(val)
+				if err != nil {
+					return err
+				}
+
+				params.To = c
 				return nil
 			}); err != nil {
 				return err
 			}
+		} else {
+			return err
 		}
 		return nil
 	}(); err != nil {
@@ -174,6 +171,47 @@ func decodeGetMetricsParams(args [0]string, argsEscaped bool, r *http.Request) (
 	}(); err != nil {
 		return params, &ogenerrors.DecodeParamError{
 			Name: "eventType",
+			In:   "query",
+			Err:  err,
+		}
+	}
+	// Decode query: userId.
+	if err := func() error {
+		cfg := uri.QueryParameterDecodingConfig{
+			Name:    "userId",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.HasParam(cfg); err == nil {
+			if err := q.DecodeParam(cfg, func(d uri.Decoder) error {
+				var paramsDotUserIdVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotUserIdVal = c
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.UserId.SetTo(paramsDotUserIdVal)
+				return nil
+			}); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "userId",
 			In:   "query",
 			Err:  err,
 		}
